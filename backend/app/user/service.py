@@ -46,8 +46,7 @@ class UserService:
 
         access_token = create_access_token(
             data={
-                "sub": str(user.id),
-                "email": user.email
+                "sub": user.email
             }
         )
 

@@ -30,3 +30,11 @@ class UserLoginResponse(BaseModel):
     message: str
     access_token: str
     token_type: str
+
+class UserMeResponse(BaseModel):
+    id: int
+    email: str
+    nickname: str
+
+    class Config:
+        from_attributes = True

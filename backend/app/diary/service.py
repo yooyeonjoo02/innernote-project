@@ -76,13 +76,43 @@ class DiaryService:
     ):
         diary = self.get_my_diary(db, diary_id, current_user)
 
+        is_content_updated = False
+
         if request.content is not None:
             diary.content = request.content
+            is_content_updated = True
 
         if request.emotion is not None:
             diary.emotion = request.emotion
 
-        return self.diary_repository.update(db, diary)
+        updated_diary = self.diary_repository.update(db, diary)
+
+        if is_content_updated:
+            analyzed_emotion = analyze_emotion_for_db(updated_diary.content)
+
+            emotion_analysis = db.query(EmotionAnalysis).filter(
+                EmotionAnalysis.diary_id == updated_diary.id
+            ).first()
+
+            if emotion_analysis is None:
+                emotion_analysis = EmotionAnalysis(
+                    diary_id=updated_diary.id
+                )
+                db.add(emotion_analysis)
+
+            emotion_analysis.fear = analyzed_emotion["fear"]
+            emotion_analysis.surprise = analyzed_emotion["surprise"]
+            emotion_analysis.anger = analyzed_emotion["anger"]
+            emotion_analysis.sadness = analyzed_emotion["sadness"]
+            emotion_analysis.neutral = analyzed_emotion["neutral"]
+            emotion_analysis.happiness = analyzed_emotion["happiness"]
+            emotion_analysis.disgust = analyzed_emotion["disgust"]
+            emotion_analysis.dominant_emotion = analyzed_emotion["dominant_emotion"]
+
+            db.commit()
+            db.refresh(updated_diary)
+
+        return updated_diary
 
     def delete_my_diary(self, db: Session, diary_id: int, current_user: User):
         diary = self.get_my_diary(db, diary_id, current_user)

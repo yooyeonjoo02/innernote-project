@@ -21,3 +21,6 @@ class User(Base):
 
     def update_nickname(self, nickname: str):
         self.nickname = nickname
+
+    def delete(self):
+        self.is_deleted = True

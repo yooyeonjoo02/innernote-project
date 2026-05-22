@@ -56,3 +56,8 @@ class UserService:
         current_user.update_nickname(request.nickname)
 
         return self.user_repository.update(db, current_user)
+    
+    def delete_my_account(self, db: Session, current_user: User):
+        current_user.delete()
+
+        return self.user_repository.update(db, current_user)

@@ -46,3 +46,6 @@ class UserUpdateRequest(BaseModel):
 class UserUpdateResponse(BaseModel):
     message: str
     user: UserResponse
+
+class UserDeleteResponse(BaseModel):
+    message: str

@@ -10,7 +10,8 @@ from app.user.schemas import (
     UserLoginResponse,
     UserMeResponse,
     UserUpdateRequest,
-    UserUpdateResponse
+    UserUpdateResponse,
+    UserDeleteResponse
 )
 from app.user.service import UserService
 from app.core.security import get_current_user
@@ -69,4 +70,16 @@ def update_my_info(
     return {
         "message": "내 정보 수정 성공",
         "user": user
+    }
+
+
+@router.delete("/me", response_model=UserDeleteResponse)
+def delete_my_account(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    user_service.delete_my_account(db, current_user)
+
+    return {
+        "message": "회원 탈퇴 성공"
     }

@@ -19,3 +19,10 @@ class Diary(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user = relationship("User")
+
+    emotion_analysis = relationship(
+    "EmotionAnalysis",
+    back_populates="diary",
+    uselist=False,
+    cascade="all, delete-orphan"
+)

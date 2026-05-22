@@ -38,3 +38,11 @@ class UserMeResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class UserUpdateRequest(BaseModel):
+    nickname: str = Field(min_length=1, max_length=50)
+
+
+class UserUpdateResponse(BaseModel):
+    message: str
+    user: UserResponse

@@ -51,3 +51,8 @@ class UserService:
         )
 
         return access_token
+    
+    def update_my_info(self, db: Session, current_user: User, request):
+        current_user.update_nickname(request.nickname)
+
+        return self.user_repository.update(db, current_user)

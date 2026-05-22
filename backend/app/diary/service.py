@@ -6,6 +6,9 @@ from app.diary.repository import DiaryRepository
 from app.diary.schemas import DiaryCreateRequest, DiaryUpdateRequest
 from app.user.models import User
 
+from app.emotion.models import EmotionAnalysis
+from app.ai.emotion_analyzer import analyze_emotion_for_db
+
 
 class DiaryService:
 
@@ -24,7 +27,27 @@ class DiaryService:
             user_id=current_user.id
         )
 
-        return self.diary_repository.save(db, diary)
+        saved_diary = self.diary_repository.save(db, diary)
+
+        analyzed_emotion = analyze_emotion_for_db(request.content)
+
+        emotion_analysis = EmotionAnalysis(
+            diary_id=saved_diary.id,
+            fear=analyzed_emotion["fear"],
+            surprise=analyzed_emotion["surprise"],
+            anger=analyzed_emotion["anger"],
+            sadness=analyzed_emotion["sadness"],
+            neutral=analyzed_emotion["neutral"],
+            happiness=analyzed_emotion["happiness"],
+            disgust=analyzed_emotion["disgust"],
+            dominant_emotion=analyzed_emotion["dominant_emotion"]
+        )
+
+        db.add(emotion_analysis)
+        db.commit()
+        db.refresh(saved_diary)
+
+        return saved_diary
 
     def get_my_diaries(self, db: Session, current_user: User):
         return self.diary_repository.find_all_by_user_id(db, current_user.id)

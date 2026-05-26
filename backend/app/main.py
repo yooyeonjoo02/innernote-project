@@ -6,10 +6,12 @@ from app.database import Base, engine
 from app.user import models as user_models
 from app.diary import models as diary_models
 from app.emotion import models as emotion_models
+from app.survey import models as survey_models
 
 from app.user.router import router as user_router
 from app.diary.router import router as diary_router
 from app.emotion.router import router as emotion_router
+from app.survey.router import router as survey_router
 
 
 Base.metadata.create_all(bind=engine)
@@ -31,6 +33,7 @@ app.add_middleware(
 app.include_router(user_router)
 app.include_router(diary_router)
 app.include_router(emotion_router)
+app.include_router(survey_router)
 
 
 @app.get("/")

@@ -1,31 +1,59 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Calendar, Edit3, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import MobileLayout from "../../shared/components/MobileLayout";
 import CalendarModal from "../components/CalendarModal";
+import api from "../../shared/api/axios";
 import "./MainPage.css";
-
-const initialDiary = `오늘은 하루 종일 이상하게 마음이 편안했다.
-특별한 일이 있었던 건 아닌데, 날씨도 좋고
-바람도 적당해서 그냥 걷는 것만으로도 기분이 꽤 좋았다.
-오랜만에 혼자 카페에 가서 창가 자리에 앉았는데, 사람들이 바쁘게 지나가는 걸 멍하니 보고 있으니까 시간 가는 줄 몰랐다.
-이런 아무 생각 없이 보내는 시간이 요즘 나한테는 꽤 소중한 것 같다.`;
 
 function MainPage() {
   const navigate = useNavigate();
 
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const [selectedDate, setSelectedDate] = useState("2026.05.05 화요일");
-  const [content, setContent] = useState(initialDiary);
+  const [content, setContent] = useState("");
+  const [nickname, setNickname] = useState("");
 
-  const handleSave = () => {
-    setIsEditMode(false);
+  useEffect(() => {
+    const getMyInfo = async () => {
+      try {
+        const response = await api.get("/api/users/me");
+        setNickname(response.data.nickname);
+      } catch (error) {
+        console.error(error);
+        alert("로그인이 필요합니다.");
+        navigate("/login");
+      }
+    };
+
+    getMyInfo();
+  }, [navigate]);
+
+  const handleSave = async () => {
+    if (!content.trim()) {
+      alert("일기 내용을 입력해 주세요.");
+      return;
+    }
+
+    try {
+      await api.post("/api/diaries", {
+        content,
+        emotion: "neutral",
+      });
+
+      alert("일기 저장 성공");
+      setIsEditMode(false);
+    } catch (error) {
+      console.error(error);
+      alert("일기 저장 실패. 다시 로그인해 주세요.");
+    }
   };
 
   const handleLogout = () => {
+    localStorage.removeItem("access_token");
     setIsMenuOpen(false);
     navigate("/login");
   };
@@ -66,7 +94,9 @@ function MainPage() {
             <div className="menu-dropdown">
               <div className="profile-row">
                 <div className="profile-icon">🙂</div>
-                <span className="profile-name">행복이</span>
+                <span className="profile-name">
+                  {nickname || "사용자"}
+                </span>
               </div>
 
               <button className="logout-button" onClick={handleLogout}>
@@ -83,6 +113,7 @@ function MainPage() {
             className="diary-edit-box"
             value={content}
             onChange={(e) => setContent(e.target.value)}
+            placeholder="오늘 하루는 어땠나요?"
           />
         ) : (
           <div className="diary-text">{content}</div>

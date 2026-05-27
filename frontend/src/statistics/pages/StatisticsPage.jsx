@@ -28,10 +28,8 @@ function StatisticsPage() {
     try {
       let url = '';
       if (viewType === 'daily') {
-        // 수정됨: 앞의 http://127... 부분을 지우고 상대 경로로 변경
         url = `/api/v1/statistics/daily?date=${selectedDate}`;
       } else {
-        // 수정됨: 앞의 http://127... 부분을 지우고 상대 경로로 변경
         url = `/api/v1/statistics/period?date=${selectedDate}&period=${periodDays}`;
       }
 
@@ -104,7 +102,6 @@ function StatisticsPage() {
   return (
     <MobileLayout>
       <div className="flex flex-col h-full bg-[#fff5f0]">
-
         <header className="pt-6 pb-2 px-6">
           <h1 className="text-xl font-bold text-center text-gray-900 tracking-tight">
             InnerNote
@@ -135,7 +132,6 @@ function StatisticsPage() {
         </header>
 
         <main className="flex-1 overflow-y-auto pb-24 px-5 pt-4">
-
           {loading && <div className="text-center text-xs text-gray-500 mb-4 animate-pulse">감정 분석 스트림 로딩 중...</div>}
           {error && <div className="text-center text-xs text-red-500 mb-4">백엔드 서버 오프라인: {error}</div>}
 
@@ -217,7 +213,7 @@ function StatisticsPage() {
                         <div className="space-y-2">
                           {recs.playlist.map((music) => (
                             <a
-                              href={`https://www.youtube.com/results?search_query=${music.title}`}
+                              href={music.youtube_url}
                               target="_blank"
                               rel="noreferrer"
                               key={music.music_id}

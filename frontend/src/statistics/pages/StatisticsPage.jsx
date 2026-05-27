@@ -28,14 +28,15 @@ function StatisticsPage() {
     try {
       let url = '';
       if (viewType === 'daily') {
-        url = `http://127.0.0.1:8000/api/v1/statistics/daily?date=${selectedDate}`;
+        // 수정됨: 앞의 http://127... 부분을 지우고 상대 경로로 변경
+        url = `/api/v1/statistics/daily?date=${selectedDate}`;
       } else {
-        url = `http://127.0.0.1:8000/api/v1/statistics/period?date=${selectedDate}&period=${periodDays}`;
+        // 수정됨: 앞의 http://127... 부분을 지우고 상대 경로로 변경
+        url = `/api/v1/statistics/period?date=${selectedDate}&period=${periodDays}`;
       }
 
       const response = await fetch(url);
       if (!response.ok) throw new Error('백엔드 서버 통신 실패');
-
       const result = await response.json();
       if (result.status === 'success') {
         setStatData(result.data);

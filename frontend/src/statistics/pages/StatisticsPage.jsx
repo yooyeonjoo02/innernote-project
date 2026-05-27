@@ -14,9 +14,9 @@ import {
 import MobileLayout from '../../shared/components/MobileLayout';
 
 function StatisticsPage() {
-  const [selectedDate, setSelectedDate] = useState('2026-05-21'); 
-  const [viewType, setViewType] = useState('daily');             
-  const [periodDays, setPeriodDays] = useState(7);               
+  const [selectedDate, setSelectedDate] = useState('2026-05-21');
+  const [viewType, setViewType] = useState('daily');
+  const [periodDays, setPeriodDays] = useState(7);
 
   const [statData, setStatData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -35,7 +35,7 @@ function StatisticsPage() {
 
       const response = await fetch(url);
       if (!response.ok) throw new Error('백엔드 서버 통신 실패');
-      
+
       const result = await response.json();
       if (result.status === 'success') {
         setStatData(result.data);
@@ -78,10 +78,10 @@ function StatisticsPage() {
   };
 
   const emotionsList = statData?.emotion_analysis || statData?.aggregated_emotion_analysis || [];
-  
+
   const activeEmotions = emotionsList.filter(e => e.ratio > 0);
   let accumulatedPercent = 0;
-  
+
   const chartSegments = activeEmotions.map(emo => {
     const start = accumulatedPercent;
     accumulatedPercent += emo.ratio;
@@ -93,8 +93,8 @@ function StatisticsPage() {
     ? { background: `conic-gradient(${chartSegments.join(', ')})` }
     : { background: '#e5e7eb' };
 
-  const dominantEmotion = emotionsList.reduce((max, current) => 
-    current.ratio > max.ratio ? current : max, 
+  const dominantEmotion = emotionsList.reduce((max, current) =>
+    current.ratio > max.ratio ? current : max,
     { emotion_name: '대기', ratio: 0 }
   );
 
@@ -103,28 +103,28 @@ function StatisticsPage() {
   return (
     <MobileLayout>
       <div className="flex flex-col h-full bg-[#fff5f0]">
-        
+
         <header className="pt-6 pb-2 px-6">
           <h1 className="text-xl font-bold text-center text-gray-900 tracking-tight">
             InnerNote
           </h1>
 
           <div className="flex gap-2 mt-4 border-b border-orange-100/50">
-            <button 
+            <button
               onClick={() => setViewType('daily')}
               className={`pb-2 px-3 text-sm transition-all ${viewType === 'daily' ? 'font-bold border-b-2 border-red-400 text-red-500' : 'font-medium text-gray-400 hover:text-gray-600'}`}
             >
               일별
             </button>
 
-            <button 
+            <button
               onClick={() => { setViewType('period'); setPeriodDays(7); }}
               className={`pb-2 px-3 text-sm transition-all ${viewType === 'period' && periodDays === 7 ? 'font-bold border-b-2 border-red-400 text-red-500' : 'font-medium text-gray-400 hover:text-gray-600'}`}
             >
               주별
             </button>
 
-            <button 
+            <button
               onClick={() => { setViewType('period'); setPeriodDays(30); }}
               className={`pb-2 px-3 text-sm transition-all ${viewType === 'period' && periodDays === 30 ? 'font-bold border-b-2 border-red-400 text-red-500' : 'font-medium text-gray-400 hover:text-gray-600'}`}
             >
@@ -165,7 +165,7 @@ function StatisticsPage() {
                 </div>
 
                 <div className="flex items-center justify-between gap-4">
-                  <div 
+                  <div
                     style={donutChartStyle}
                     className="relative w-36 h-36 rounded-full flex items-center justify-center emotion-chart shrink-0 shadow-sm transition-all duration-500"
                   >
@@ -215,11 +215,11 @@ function StatisticsPage() {
                         </div>
                         <div className="space-y-2">
                           {recs.playlist.map((music) => (
-                            <a 
-                              href={music.youtube_url} 
-                              target="_blank" 
-                              rel="noreferrer" 
-                              key={music.music_id} 
+                            <a
+                              href={`https://www.youtube.com/results?search_query=${music.title}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              key={music.music_id}
                               className="flex items-center gap-1.5 text-xs text-gray-700 group cursor-pointer block"
                             >
                               <Play className="w-3 h-3 text-gray-500 fill-gray-500 group-hover:text-purple-600 group-hover:fill-purple-600 shrink-0" />

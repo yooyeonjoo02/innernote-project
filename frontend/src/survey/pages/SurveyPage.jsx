@@ -1,14 +1,23 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import MobileLayout from '../../shared/components/MobileLayout';
 
+const API_BASE = 'http://localhost:8000';
+
 const questions = [
-  { id: 1, label: '좋아하는 가수', maxLength: 50 },
-  { id: 2, label: '좋아하는 장르', maxLength: 30 },
-  { id: 3, label: '거주지(00구)', maxLength: 30 },
-  { id: 4, label: '좋아하는 장소(예시:노래방, 책방)', maxLength: 50 },
-  { id: 5, label: '가보고 싶은 장소', maxLength: 50 },
+  { id: 1, key: 'favorite_singer', label: '좋아하는 가수', maxLength: 50 },
+  { id: 2, key: 'favorite_genre', label: '좋아하는 장르', maxLength: 30 },
+  { id: 3, key: 'residence_area', label: '거주지(00구)', maxLength: 30 },
+  { id: 4, key: 'favorite_place', label: '좋아하는 장소(예시:노래방, 책방)', maxLength: 50 },
+  { id: 5, key: 'want_to_go_place', label: '가보고 싶은 장소', maxLength: 50 },
 ];
+
+const defaultAnswers = {
+  favorite_singer: '',
+  favorite_genre: '',
+  residence_area: '',
+  favorite_place: '',
+  want_to_go_place: '',
+};
 
 function ClipboardIcon() {
   return (
@@ -22,17 +31,81 @@ function ClipboardIcon() {
 }
 
 function SurveyPage() {
-  const [answers, setAnswers] = useState({ 1: '', 2: '', 3: '', 4: '', 5: '' });
+  const [answers, setAnswers] = useState(defaultAnswers);
   const [focused, setFocused] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const handleChange = (id, value, maxLength) => {
+  const token = localStorage.getItem('access_token');
+
+  useEffect(() => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    fetch(`${API_BASE}/api/surveys/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (!res.ok) return null;
+        return res.json();
+      })
+      .then((data) => {
+        if (data) {
+          setAnswers({
+            favorite_singer: data.favorite_singer || '',
+            favorite_genre: data.favorite_genre || '',
+            residence_area: data.residence_area || '',
+            favorite_place: data.favorite_place || '',
+            want_to_go_place: data.want_to_go_place || '',
+          });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  const handleChange = (key, value, maxLength) => {
     if (value.length > maxLength) return;
-    setAnswers((prev) => ({ ...prev, [id]: value }));
+    setAnswers((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSave = () => {
-    alert('저장되었습니다!');
+  const handleSave = async () => {
+    if (!token) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/surveys`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(answers),
+      });
+
+      if (!res.ok) throw new Error();
+      alert('저장되었습니다!');
+    } catch {
+      alert('저장에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <MobileLayout>
+        <div style={{ ...styles.page, justifyContent: 'center' }}>
+          <p style={{ color: '#444' }}>불러오는 중...</p>
+        </div>
+      </MobileLayout>
+    );
+  }
 
   return (
     <MobileLayout>
@@ -63,8 +136,8 @@ function SurveyPage() {
                     ...styles.textarea,
                     border: focused === q.id ? '2px solid #2196F3' : '2px solid transparent',
                   }}
-                  value={answers[q.id]}
-                  onChange={(e) => handleChange(q.id, e.target.value, q.maxLength)}
+                  value={answers[q.key]}
+                  onChange={(e) => handleChange(q.key, e.target.value, q.maxLength)}
                   onFocus={() => setFocused(q.id)}
                   onBlur={() => setFocused(null)}
                   maxLength={q.maxLength}
@@ -78,8 +151,8 @@ function SurveyPage() {
           ))}
         </div>
 
-        <button style={styles.saveButton} onClick={handleSave}>
-          저장
+        <button style={styles.saveButton} onClick={handleSave} disabled={saving}>
+          {saving ? '저장 중...' : '저장'}
         </button>
       </div>
     </MobileLayout>

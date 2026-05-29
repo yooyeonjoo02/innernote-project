@@ -9,11 +9,19 @@ import "./MainPage.css";
 function MainPage() {
   const navigate = useNavigate();
 
+  const getTodayString = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const [selectedDate, setSelectedDate] = useState("2026-05-29");
+  const [selectedDate, setSelectedDate] = useState(getTodayString());
   const [content, setContent] = useState("");
   const [nickname, setNickname] = useState("");
   const [diaryDates, setDiaryDates] = useState([]);
@@ -21,15 +29,7 @@ function MainPage() {
 
   const formatDateText = (dateString) => {
     const date = new Date(dateString);
-    const weekDays = [
-      "일요일",
-      "월요일",
-      "화요일",
-      "수요일",
-      "목요일",
-      "금요일",
-      "토요일",
-    ];
+    const weekDays = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
 
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -113,6 +113,16 @@ function MainPage() {
     }
   };
 
+  const handleGoStatistics = () => {
+    setIsMenuOpen(false);
+
+    navigate("/statistics", {
+      state: {
+        selectedDate,
+      },
+    });
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("access_token");
     setIsMenuOpen(false);
@@ -123,10 +133,7 @@ function MainPage() {
     <MobileLayout backgroundClass="main-bg">
       <header className="main-header">
         <div className="date-area">
-          <button
-            className="icon-button"
-            onClick={() => setIsCalendarOpen(true)}
-          >
+          <button className="icon-button" onClick={() => setIsCalendarOpen(true)}>
             <Calendar size={22} />
           </button>
 
@@ -157,6 +164,10 @@ function MainPage() {
                 <div className="profile-icon">🙂</div>
                 <span className="profile-name">{nickname || "사용자"}</span>
               </div>
+
+              <button className="logout-button" onClick={handleGoStatistics}>
+                STATISTICS
+              </button>
 
               <button className="logout-button" onClick={handleLogout}>
                 LOGOUT

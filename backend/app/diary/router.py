@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from datetime import date
 
 from app.core.security import get_current_user
 from app.database import get_db
@@ -8,8 +9,7 @@ from app.diary.schemas import (
     DiaryCreateResponse,
     DiaryResponse,
     DiaryUpdateRequest,
-    DiaryUpdateResponse,
-    DiaryDeleteResponse
+    DiaryUpdateResponse
 )
 from app.diary.service import DiaryService
 from app.user.models import User
@@ -45,25 +45,33 @@ def get_my_diaries(
     return diary_service.get_my_diaries(db, current_user)
 
 
-@router.get("/{diary_id}", response_model=DiaryResponse)
-def get_my_diary(
-    diary_id: int,
+@router.get("/dates")
+def get_diary_dates(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    return diary_service.get_my_diary(db, diary_id, current_user)
+    return diary_service.get_diary_dates(db, current_user)
 
 
-@router.patch("/{diary_id}", response_model=DiaryUpdateResponse)
-def update_my_diary(
-    diary_id: int,
+@router.get("/date/{diary_date}", response_model=DiaryResponse)
+def get_diary_by_date(
+    diary_date: date,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    return diary_service.get_diary_by_date(db, diary_date, current_user)
+
+
+@router.patch("/date/{diary_date}", response_model=DiaryUpdateResponse)
+def update_diary_by_date(
+    diary_date: date,
     request: DiaryUpdateRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    diary = diary_service.update_my_diary(
+    diary = diary_service.update_diary_by_date(
         db,
-        diary_id,
+        diary_date,
         request,
         current_user
     )
@@ -71,17 +79,4 @@ def update_my_diary(
     return {
         "message": "일기 수정 성공",
         "diary": diary
-    }
-
-
-@router.delete("/{diary_id}", response_model=DiaryDeleteResponse)
-def delete_my_diary(
-    diary_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    diary_service.delete_my_diary(db, diary_id, current_user)
-
-    return {
-        "message": "일기 삭제 성공"
     }

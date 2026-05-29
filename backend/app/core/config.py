@@ -1,5 +1,3 @@
-# config file
-
 from pydantic_settings import BaseSettings
 
 
@@ -11,6 +9,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     KAKAO_REST_API_KEY: str
+    YOUTUBE_API_KEY: str | None = None
 
     class Config:
         env_file = ".env"

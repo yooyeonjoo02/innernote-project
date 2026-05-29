@@ -28,7 +28,14 @@ function StatisticsPage() {
 
   const [viewType, setViewType] = useState('daily');
 
-  const { statData, loading, error } = useStatistics(selectedDate, viewType);
+  const {
+    statData,
+    recommendation,
+    loading,
+    recommendationLoading,
+    error,
+    recommendationError
+  } = useStatistics(selectedDate, viewType);
 
   const changeDate = (amount) => {
     const newDate = getChangedDate(selectedDate, viewType, amount);
@@ -65,8 +72,20 @@ function StatisticsPage() {
                 changeDate={changeDate}
               />
 
-              {viewType === 'daily' && statData.recommendations && (
-                <RecommendationCard recs={statData.recommendations} />
+              {viewType === 'daily' && recommendationLoading && (
+                <div className="text-center text-xs text-gray-500 my-4 animate-pulse">
+                  추천 결과 불러오는 중...
+                </div>
+              )}
+
+              {viewType === 'daily' && recommendationError && (
+                <div className="text-center text-xs text-red-500 my-4">
+                  추천 결과를 불러오지 못했습니다: {recommendationError}
+                </div>
+              )}
+
+              {viewType === 'daily' && recommendation && (
+                <RecommendationCard recommendation={recommendation} />
               )}
 
               {(viewType === 'weekly' || viewType === 'monthly') && (

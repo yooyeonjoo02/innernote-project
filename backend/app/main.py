@@ -14,6 +14,7 @@ from app.emotion.router import router as emotion_router
 from app.survey.router import router as survey_router
 # 새로 추가된 통계 라우터
 from app.statistics.router import router as statistics_router
+from app.recommendation.router import router as recommendation_router
 
 
 Base.metadata.create_all(bind=engine)
@@ -38,6 +39,7 @@ app.include_router(emotion_router)
 app.include_router(survey_router)
 # 메인 앱에 통계 라우터 등록
 app.include_router(statistics_router)
+app.include_router(recommendation_router)
 
 
 @app.get("/")

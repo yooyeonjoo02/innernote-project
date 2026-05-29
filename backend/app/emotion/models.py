@@ -1,12 +1,4 @@
-from sqlalchemy import (
-    Column,
-    Integer,
-    Float,
-    ForeignKey,
-    DateTime,
-    String
-)
-
+from sqlalchemy import Column, Integer, Float, ForeignKey, DateTime, String
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
@@ -21,6 +13,7 @@ class EmotionAnalysis(Base):
     diary_id = Column(
         Integer,
         ForeignKey("diaries.id"),
+        nullable=False,
         unique=True
     )
 
@@ -32,11 +25,14 @@ class EmotionAnalysis(Base):
     happiness = Column(Float, default=0.0)
     disgust = Column(Float, default=0.0)
 
-    dominant_emotion = Column(String(50))
+    dominant_emotion = Column(String(50), nullable=False)
 
-    created_at = Column(
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    updated_at = Column(
         DateTime,
-        default=datetime.utcnow
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow
     )
 
     diary = relationship(

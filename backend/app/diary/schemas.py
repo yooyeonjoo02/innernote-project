@@ -1,21 +1,21 @@
-from datetime import datetime
+from datetime import datetime, date
 from pydantic import BaseModel, Field
 
 
 class DiaryCreateRequest(BaseModel):
     content: str = Field(min_length=1)
-    emotion: str | None = None
+    diary_date: date
 
 
 class DiaryUpdateRequest(BaseModel):
-    content: str | None = Field(default=None, min_length=1)
-    emotion: str | None = None
+    content: str = Field(min_length=1)
 
 
 class DiaryResponse(BaseModel):
     id: int
     content: str
     emotion: str | None
+    diary_date: date
     user_id: int
     created_at: datetime
     updated_at: datetime
@@ -32,7 +32,3 @@ class DiaryCreateResponse(BaseModel):
 class DiaryUpdateResponse(BaseModel):
     message: str
     diary: DiaryResponse
-
-
-class DiaryDeleteResponse(BaseModel):
-    message: str

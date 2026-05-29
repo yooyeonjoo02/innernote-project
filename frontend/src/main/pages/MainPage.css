@@ -154,6 +154,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   margin-bottom: 18px;
 }
 
@@ -171,6 +172,17 @@
   background: white;
   padding: 0 8px;
   font-size: 14px;
+}
+
+.calendar-year-input {
+  width: 66px;
+  height: 28px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  padding: 0 6px;
+  font-size: 14px;
+  box-sizing: border-box;
 }
 
 .week-row,
@@ -197,11 +209,20 @@
   background: transparent;
   border-radius: 8px;
   font-size: 14px;
-  color: #333;
   cursor: pointer;
+}
+
+.date-button.has-diary {
+  color: #111;
+  font-weight: 700;
+}
+
+.date-button.no-diary {
+  color: #aaa;
 }
 
 .date-button.active {
   background: #333;
   color: white;
+  font-weight: 700;
 }

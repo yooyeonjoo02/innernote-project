@@ -2,10 +2,11 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 import torch.nn.functional as F
 
-MODEL_NAME = "dlckdfuf141/korean-emotion-kluebert-v2"
+MODEL_PATH = "kang192/innernote-emotion-kluebert"
 
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
+model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATH)
+model.eval()
 
 label_map = {
     0: "fear",
@@ -28,35 +29,35 @@ korean_label_map = {
 }
 
 TEMPERATURE = 5.0
+MAX_CHARS = 300
+STRIDE = 200
 
 
-def analyze_emotion_for_db(text: str):
-    inputs = tokenizer(
-        text,
-        return_tensors="pt",
-        truncation=True,
-        padding=True
-    )
+def analyze_emotion_for_db(text: str) -> dict:
+    chunks = [text] if len(text) <= MAX_CHARS else [
+        text[i:i + MAX_CHARS]
+        for i in range(0, len(text), STRIDE)
+        if len(text[i:i + MAX_CHARS]) >= 30
+    ]
 
-    with torch.no_grad():
-        outputs = model(**inputs)
+    all_probs = []
+    for chunk in chunks:
+        inputs = tokenizer(
+            chunk,
+            return_tensors="pt",
+            truncation=True,
+            padding=True,
+            max_length=512
+        )
+        with torch.no_grad():
+            logits = model(**inputs).logits
+        probs = F.softmax(logits / TEMPERATURE, dim=-1)[0]
+        all_probs.append(probs)
 
-    logits = outputs.logits
+    avg_probs = torch.stack(all_probs).mean(dim=0)
 
-    probabilities = F.softmax(
-        logits / TEMPERATURE,
-        dim=-1
-    )[0]
-
-    result = {}
-
-    for idx, prob in enumerate(probabilities):
-        result[label_map[idx]] = float(prob)
-
-    dominant_idx = torch.argmax(probabilities).item()
-
-    dominant_key = label_map[dominant_idx]
-
-    result["dominant_emotion"] = korean_label_map[dominant_key]
+    result = {label_map[i]: float(p) for i, p in enumerate(avg_probs)}
+    dominant_idx = torch.argmax(avg_probs).item()
+    result["dominant_emotion"] = korean_label_map[label_map[dominant_idx]]
 
     return result

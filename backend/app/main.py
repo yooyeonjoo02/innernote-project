@@ -12,12 +12,15 @@ from app.user.router import router as user_router
 from app.diary.router import router as diary_router
 from app.emotion.router import router as emotion_router
 from app.survey.router import router as survey_router
-# 새로 추가된 통계 라우터
 from app.statistics.router import router as statistics_router
 from app.recommendation.router import router as recommendation_router
 
-
+# 1. [임시 추가] 기존 테이블 모두 날리기
+Base.metadata.drop_all(bind=engine)
+# 2. 현재 파일 구조에 맞춰 테이블을 완벽하게 새로 생성
 Base.metadata.create_all(bind=engine)
+# ==================================
+
 
 app = FastAPI(
     title="InnerNote API",
@@ -37,7 +40,6 @@ app.include_router(user_router)
 app.include_router(diary_router)
 app.include_router(emotion_router)
 app.include_router(survey_router)
-# 메인 앱에 통계 라우터 등록
 app.include_router(statistics_router)
 app.include_router(recommendation_router)
 

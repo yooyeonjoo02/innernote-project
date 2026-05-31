@@ -24,6 +24,18 @@ class Diary(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    # ===== [추천 고정용 캐싱 컬럼 모음] =====
+    recommended_music_title = Column(String(255), nullable=True)
+    recommended_music_url = Column(String(255), nullable=True)
+    
+    recommended_place_name = Column(String(255), nullable=True)
+    recommended_place_address = Column(String(255), nullable=True)
+    recommended_place_url = Column(String(255), nullable=True)
+
+    recommended_mission_title = Column(String(255), nullable=True)
+    recommended_mission_description = Column(String(500), nullable=True)
+    # ========================================
+
     user = relationship("User")
 
     emotion_analysis = relationship(

@@ -47,3 +47,18 @@ class RecommendationRepository:
         
         return [d[0] for d in recent_diaries]
     # ====================================================
+
+    # ===== [신규] 최근 14일(2주) 음악 중복 방지용 쿼리 =====
+    @staticmethod
+    def find_recent_recommended_music(db: Session, user_id: int, target_date: date, days: int = 14):
+        cutoff_date = target_date - timedelta(days=days)
+        recent_diaries = db.query(Diary.recommended_music_title).filter(
+            Diary.user_id == user_id,
+            Diary.diary_date >= cutoff_date,
+            Diary.diary_date < target_date,
+            Diary.recommended_music_title.isnot(None),
+            Diary.is_deleted == False
+        ).all()
+        
+        return [d[0] for d in recent_diaries]
+    # ====================================================

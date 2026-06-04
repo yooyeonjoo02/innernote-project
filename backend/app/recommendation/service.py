@@ -32,9 +32,11 @@ class RecommendationService:
         if survey is None:
             raise HTTPException(status_code=404, detail="설문 정보가 없습니다.")
 
+        # 행복도 가져오기 (0.0 ~ 1.0 기준)
         happiness = emotion.happiness or 0.0
 
-        if happiness <= 0.6:
+        # 감정 기준점: 행복도 50%(0.5) 이하일 때 위로(comfort), 초과일 때 도전(challenge)
+        if happiness <= 0.5:
             recommendation_type = "comfort"
             music_keyword = f"{survey.favorite_singer} {survey.favorite_genre} 힐링 노래"
         else:
@@ -42,14 +44,20 @@ class RecommendationService:
             new_genre = self._pick_new_genre(survey.favorite_genre)
             music_keyword = f"기분 좋은 {new_genre} 노래 추천"
 
+        db_needs_commit = False
+
+        # --- 1. 음악 추천 ---
+        # 이미 DB에 추천 음악이 저장되어 있다면 그것을 그대로 사용 (바뀌지 않음)
         if diary.recommended_music_title and diary.recommended_music_url:
             music = MusicRecommendation(title=diary.recommended_music_title, url=diary.recommended_music_url)
         else:
+            # 저장된 음악이 없을 때만 새로 검색 후 저장
             music = self._search_youtube_music(music_keyword)
             diary.recommended_music_title = music.title
             diary.recommended_music_url = music.url
-            db.commit()
+            db_needs_commit = True
 
+        # --- 2. 장소 추천 ---
         if diary.recommended_place_name:
             place = PlaceRecommendation(
                 name=diary.recommended_place_name,
@@ -61,8 +69,9 @@ class RecommendationService:
             diary.recommended_place_name = place.name
             diary.recommended_place_address = place.address
             diary.recommended_place_url = place.url
-            db.commit()
+            db_needs_commit = True
 
+        # --- 3. 미션 추천 ---
         if diary.recommended_mission_title:
             mission = MissionRecommendation(
                 title=diary.recommended_mission_title,
@@ -72,6 +81,10 @@ class RecommendationService:
             mission = self._build_mission(db=db, user_id=user_id, recommendation_type=recommendation_type, target_date=target_date)
             diary.recommended_mission_title = mission.title
             diary.recommended_mission_description = mission.description
+            db_needs_commit = True
+
+        # --- 4. 최초 추천 시에만 데이터베이스 변경사항 커밋 ---
+        if db_needs_commit:
             db.commit()
             db.refresh(diary)
 
@@ -126,14 +139,8 @@ class RecommendationService:
     def _search_kakao_place(self, db: Session, user_id: int, survey, happiness: float, target_date: date):
         kakao_api_key = settings.KAKAO_REST_API_KEY
 
-        # ===== 디버그 로그 =====
-        print(f"[DEBUG] kakao_api_key: {kakao_api_key[:10] if kakao_api_key else 'None'}")
-        print(f"[DEBUG] residence: {survey.residence_area}")
-        print(f"[DEBUG] fav_place: {survey.favorite_place}")
-        print(f"[DEBUG] want_place: {survey.want_to_go_place}")
-        # ======================
-
-        is_happy = happiness >= 0.6
+        # 장소 추천 내부 로직 50%(0.5) 초과로 맞춤
+        is_happy = happiness > 0.5
         residence = survey.residence_area or "용인시 수지구"
         fav_place = survey.favorite_place or "카페"
         want_place = survey.want_to_go_place or "명소"
@@ -148,7 +155,6 @@ class RecommendationService:
         )
 
         if not kakao_api_key:
-            print("[DEBUG] API 키 없음 → fallback 반환")
             return fallback
 
         url = "https://dapi.kakao.com/v2/local/search/keyword.json"
@@ -157,20 +163,14 @@ class RecommendationService:
 
         try:
             response = requests.get(url, headers=headers, params=params, timeout=5)
-        except Exception as e:
-            print(f"[DEBUG] 요청 예외: {e}")
+        except Exception:
             return fallback
 
-        # ===== 디버그 로그 =====
-        print(f"[DEBUG] 카카오 응답코드: {response.status_code}")
+        if response.status_code != 200:
+            return fallback
+            
         documents = response.json().get("documents", [])
-        print(f"[DEBUG] 결과 수: {len(documents)}")
-        if documents:
-            print(f"[DEBUG] 첫번째 장소: {documents[0].get('place_name')}")
-            print(f"[DEBUG] 두번째 장소: {documents[1].get('place_name') if len(documents) > 1 else 'N/A'}")
-        # ======================
-
-        if response.status_code != 200 or not documents:
+        if not documents:
             return fallback
 
         recent_places = RecommendationRepository.find_recent_recommended_places(
@@ -207,7 +207,6 @@ class RecommendationService:
         )
 
         best_place = scored[0][1]
-        print(f"[DEBUG] 최종 선택 장소: {best_place.get('place_name')}")
 
         return PlaceRecommendation(
             name=best_place.get("place_name"),

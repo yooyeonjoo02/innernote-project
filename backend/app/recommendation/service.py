@@ -1,7 +1,7 @@
 import os
 import random
 import requests
-from datetime import date
+from datetime import date, timezone, timedelta
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from urllib.parse import quote
@@ -35,30 +35,70 @@ class RecommendationService:
         # 행복도 가져오기 (0.0 ~ 1.0 기준)
         happiness = emotion.happiness or 0.0
 
-        # 감정 기준점: 행복도 50%(0.5) 이하일 때 위로(comfort), 초과일 때 도전(challenge)
+        # [수정 완료] 새로운 음악 키워드 생성 로직
         if happiness <= 0.5:
             recommendation_type = "comfort"
-            music_keyword = f"{survey.favorite_singer} {survey.favorite_genre} 힐링 노래"
+            comfort_keywords = []
+            
+            # 가수와 장르를 각각 독립적인 검색어로 추가하여 번갈아 나오도록 설정
+            if survey.favorite_singer:
+                comfort_keywords.append(f"{survey.favorite_singer} 힐링 노래")
+                comfort_keywords.append(f"{survey.favorite_singer} 라이브 무대")
+            if survey.favorite_genre:
+                comfort_keywords.append(f"{survey.favorite_genre} 힐링 노래")
+                comfort_keywords.append(f"{survey.favorite_genre} 명곡 추천")
+            
+            # 설문 정보가 비어있을 경우의 기본값
+            if not comfort_keywords:
+                comfort_keywords = ["잔잔한 힐링 노래", "마음이 편안해지는 음악"]
+                
+            music_keyword = random.choice(comfort_keywords)
         else:
             recommendation_type = "challenge"
-            new_genre = self._pick_new_genre(survey.favorite_genre)
-            music_keyword = f"기분 좋은 {new_genre} 노래 추천"
+            challenge_keywords = [
+                "최신 신곡 추천", 
+                "인기 급상승 음악", 
+                "요즘 뜨는 트렌딩 노래", 
+                "기분 좋아지는 신나는 노래"
+            ]
+            music_keyword = random.choice(challenge_keywords)
+
+        # 💡 감정(일기 내용) 변경 및 설문 변경 감지 로직
+        need_refresh = False
+        
+        survey_updated = getattr(survey, "updated_at", None)
+        emotion_updated = getattr(emotion, "updated_at", None)
+        diary_updated = getattr(diary, "updated_at", None)
+        
+        if diary_updated:
+            diary_aware = diary_updated.replace(tzinfo=timezone.utc) if diary_updated.tzinfo is None else diary_updated
+            
+            if emotion_updated:
+                emotion_aware = emotion_updated.replace(tzinfo=timezone.utc) if emotion_updated.tzinfo is None else emotion_updated
+                if emotion_aware >= diary_aware:
+                    need_refresh = True
+            
+            if target_date >= date.today() and survey_updated and not need_refresh:
+                survey_aware = survey_updated.replace(tzinfo=timezone.utc) if survey_updated.tzinfo is None else survey_updated
+                if survey_aware > diary_aware:
+                    need_refresh = True
 
         db_needs_commit = False
 
         # --- 1. 음악 추천 ---
-        # 이미 DB에 추천 음악이 저장되어 있다면 그것을 그대로 사용 (바뀌지 않음)
-        if diary.recommended_music_title and diary.recommended_music_url:
+        if diary.recommended_music_title and diary.recommended_music_url and not need_refresh:
             music = MusicRecommendation(title=diary.recommended_music_title, url=diary.recommended_music_url)
         else:
-            # 저장된 음악이 없을 때만 새로 검색 후 저장
-            music = self._search_youtube_music(music_keyword)
+            # 최근 14일(2주) 동안 추천된 음악 목록 가져오기
+            recent_music = RecommendationRepository.find_recent_recommended_music(db, user_id, target_date, days=14)
+            
+            music = self._search_youtube_music(music_keyword, recent_titles=recent_music)
             diary.recommended_music_title = music.title
             diary.recommended_music_url = music.url
             db_needs_commit = True
 
         # --- 2. 장소 추천 ---
-        if diary.recommended_place_name:
+        if diary.recommended_place_name and not need_refresh:
             place = PlaceRecommendation(
                 name=diary.recommended_place_name,
                 address=diary.recommended_place_address,
@@ -72,7 +112,7 @@ class RecommendationService:
             db_needs_commit = True
 
         # --- 3. 미션 추천 ---
-        if diary.recommended_mission_title:
+        if diary.recommended_mission_title and not need_refresh:
             mission = MissionRecommendation(
                 title=diary.recommended_mission_title,
                 description=diary.recommended_mission_description
@@ -83,7 +123,7 @@ class RecommendationService:
             diary.recommended_mission_description = mission.description
             db_needs_commit = True
 
-        # --- 4. 최초 추천 시에만 데이터베이스 변경사항 커밋 ---
+        # --- 4. 변경사항 커밋 ---
         if db_needs_commit:
             db.commit()
             db.refresh(diary)
@@ -97,12 +137,16 @@ class RecommendationService:
             mission=mission
         )
 
+    # 더 이상 필요 없는 로직이므로 삭제 무방하나, 구조 유지를 원하시면 놔두셔도 됩니다.
     def _pick_new_genre(self, favorite_genre: str):
         genres = ["발라드", "힙합", "재즈", "인디", "클래식", "알앤비", "락", "팝"]
         candidates = [g for g in genres if g != favorite_genre]
         return random.choice(candidates) if candidates else "어쿠스틱"
 
-    def _search_youtube_music(self, keyword: str):
+    def _search_youtube_music(self, keyword: str, recent_titles: list = None):
+        if recent_titles is None:
+            recent_titles = []
+            
         youtube_api_key = settings.YOUTUBE_API_KEY
         if not keyword:
             keyword = "오늘의 음악"
@@ -115,8 +159,16 @@ class RecommendationService:
             )
 
         url = "https://www.googleapis.com/youtube/v3/search"
-        params = {"part": "snippet", "q": keyword, "type": "video", "maxResults": 10, "key": youtube_api_key}
-        response = requests.get(url, params=params, timeout=5)
+        # 넉넉하게 15개를 가져와서 필터링
+        params = {"part": "snippet", "q": keyword, "type": "video", "maxResults": 15, "key": youtube_api_key}
+        
+        try:
+            response = requests.get(url, params=params, timeout=5)
+        except Exception:
+            return MusicRecommendation(
+                title=f"{keyword} 검색 결과",
+                url=f"https://www.youtube.com/results?search_query={encoded_keyword}"
+            )
 
         if response.status_code != 200:
             return MusicRecommendation(
@@ -131,15 +183,25 @@ class RecommendationService:
                 url=f"https://www.youtube.com/results?search_query={encoded_keyword}"
             )
 
-        selected = random.choice(items)
+        # 💡 [핵심] 최근 2주 동안 추천한 제목과 일치하는 영상 제거
+        valid_items = [
+            item for item in items 
+            if item.get("snippet", {}).get("title") not in recent_titles
+        ]
+        
+        # 만약 전부 겹쳐서 남은게 없다면 안전장치로 기존 items 그대로 사용
+        if not valid_items:
+            valid_items = items
+
+        selected = random.choice(valid_items)
         title = selected.get("snippet", {}).get("title", f"{keyword} 추천 음악")
         video_id = selected.get("id", {}).get("videoId")
+        
         return MusicRecommendation(title=title, url=f"https://www.youtube.com/watch?v={video_id}")
 
     def _search_kakao_place(self, db: Session, user_id: int, survey, happiness: float, target_date: date):
+        # (기존 장소 추천 코드와 완전히 동일)
         kakao_api_key = settings.KAKAO_REST_API_KEY
-
-        # 장소 추천 내부 로직 50%(0.5) 초과로 맞춤
         is_happy = happiness > 0.5
         residence = survey.residence_area or "용인시 수지구"
         fav_place = survey.favorite_place or "카페"
@@ -215,6 +277,7 @@ class RecommendationService:
         )
 
     def _build_mission(self, db: Session, user_id: int, recommendation_type: str, target_date: date):
+        # (기존 미션 추천 코드와 완전히 동일)
         recent_missions = RecommendationRepository.find_recent_recommended_missions(
             db, user_id, target_date, limit=10
         )

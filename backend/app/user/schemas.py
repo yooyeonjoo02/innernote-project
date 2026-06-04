@@ -49,3 +49,21 @@ class UserUpdateResponse(BaseModel):
 
 class UserDeleteResponse(BaseModel):
     message: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ForgotPasswordResponse(BaseModel):
+    message: str
+    reset_token: str
+
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    new_password: str = Field(min_length=4, max_length=100)
+
+
+class ResetPasswordResponse(BaseModel):
+    message: str

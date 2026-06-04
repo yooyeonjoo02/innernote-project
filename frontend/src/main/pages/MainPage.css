@@ -61,7 +61,7 @@
   width: 100%;
   height: 295px;
   resize: none;
-  border: 2px solid #1e9bff;
+  border: 2px solid #d0cfd0;
   outline: none;
   background: rgba(255, 255, 255, 0.35);
   padding: 12px;
@@ -89,7 +89,7 @@
   position: absolute;
   top: 34px;
   right: 0;
-  width: 118px;
+  width: 150px;
   padding: 10px;
   background: white;
   border: 2px solid #e5eff7;
@@ -107,18 +107,73 @@
 .profile-icon {
   width: 32px;
   height: 32px;
-  border: 2px solid #111;
+  border: 2px solid #222;
+  background: #fff;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
+  cursor: pointer;
+  padding: 0;
 }
 
 .profile-name {
   font-size: 14px;
   font-weight: 700;
   color: #111;
+  cursor: pointer;
+}
+
+.icon-picker {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin: 8px 0 10px;
+}
+
+.icon-option {
+  border: 1px solid #eee;
+  background-color: #fff7fb;
+  border-radius: 8px;
+  font-size: 18px;
+  padding: 5px;
+  cursor: pointer;
+}
+
+.icon-option:hover {
+  background-color: #ffe1ef;
+}
+
+.nickname-edit-box {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nickname-input {
+  width: 72px;
+  height: 26px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 0 6px;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+.nickname-save-button {
+  border: none;
+  background-color: #ffe1ef;
+  color: #333;
+  border-radius: 6px;
+  padding: 5px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nickname-save-button:hover {
+  background-color: #ffcde3;
 }
 
 .logout-button {
@@ -130,6 +185,21 @@
   font-weight: 700;
   padding: 8px 0;
   cursor: pointer;
+}
+
+.delete-account-button {
+  margin-top: 6px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #999;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.delete-account-button:hover {
+  color: #ff4d4f;
+  text-decoration: underline;
 }
 
 .calendar-overlay {

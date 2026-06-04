@@ -2,7 +2,8 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 import torch.nn.functional as F
 
-MODEL_PATH = "kang192/innernote-emotion-kluebert"
+# MODEL_PATH = "kang192/innernote-emotion-kluebert"
+MODEL_PATH = "dlckdfuf141/korean-emotion-kluebert-v2"
 
 tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
 model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATH)

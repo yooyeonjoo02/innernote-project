@@ -15,8 +15,6 @@ from app.survey.router import router as survey_router
 from app.statistics.router import router as statistics_router
 from app.recommendation.router import router as recommendation_router
 
-# 1. [임시 추가] 기존 테이블 모두 날리기
-Base.metadata.drop_all(bind=engine)
 # 2. 현재 파일 구조에 맞춰 테이블을 완벽하게 새로 생성
 Base.metadata.create_all(bind=engine)
 # ==================================

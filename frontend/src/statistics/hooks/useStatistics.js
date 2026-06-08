@@ -28,7 +28,16 @@ function useStatistics(selectedDate, viewType) {
           url = `/api/v1/statistics/monthly?date=${selectedDate}`;
         }
 
-        const response = await fetch(url);
+        const token =
+          localStorage.getItem('accessToken') ||
+          localStorage.getItem('access_token') ||
+          localStorage.getItem('token');
+
+        const response = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
 
         if (!response.ok) {
           throw new Error('통계 서버 통신 실패');

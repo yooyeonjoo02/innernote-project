@@ -115,12 +115,15 @@ class StatisticsService:
 
         return trend
 
+    # [수정] user_id 파라미터 추가
     @staticmethod
-    def get_daily_statistics(db: Session, date: str):
+    def get_daily_statistics(db: Session, user_id: int, date: str):
         target_date = StatisticsService.parse_date(date)
 
+        # [수정] 레포지토리 호출 시 user_id 전달
         diary_record = StatisticsRepository.find_diary_by_date(
             db,
+            user_id,
             target_date
         )
 
@@ -170,20 +173,23 @@ class StatisticsService:
             }
         }
 
+    # [수정] user_id 파라미터 추가 및 내부 함수에 전달
     @staticmethod
-    def get_weekly_statistics(db: Session, date: str):
+    def get_weekly_statistics(db: Session, user_id: int, date: str):
         end_date = StatisticsService.parse_date(date)
         start_date = end_date - timedelta(days=6)
 
         return StatisticsService.get_period_statistics(
             db,
+            user_id,
             "weekly",
             start_date,
             end_date
         )
 
+    # [수정] user_id 파라미터 추가 및 내부 함수에 전달
     @staticmethod
-    def get_monthly_statistics(db: Session, date: str):
+    def get_monthly_statistics(db: Session, user_id: int, date: str):
         target_date = StatisticsService.parse_date(date)
         start_date = target_date.replace(day=1)
 
@@ -196,20 +202,24 @@ class StatisticsService:
 
         return StatisticsService.get_period_statistics(
             db,
+            user_id,
             "monthly",
             start_date,
             end_date
         )
 
+    # [수정] user_id 파라미터 추가 및 레포지토리에 전달
     @staticmethod
     def get_period_statistics(
         db: Session,
+        user_id: int,
         period: str,
         start_date,
         end_date
     ):
         diaries = StatisticsRepository.find_diaries_with_emotion_analysis(
             db,
+            user_id,
             start_date,
             end_date
         )

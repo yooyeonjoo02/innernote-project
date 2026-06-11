@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import MobileLayout from '../../shared/components/MobileLayout';
@@ -7,6 +7,7 @@ import StatisticsHeader from '../components/StatisticsHeader';
 import EmotionChart from '../components/EmotionChart';
 import RecommendationCard from '../components/RecommendationCard';
 import StatisticsSummary from '../components/StatisticsSummary';
+import CalendarModal from '../../main/components/CalendarModal';
 
 import useStatistics from '../hooks/useStatistics';
 import { getChangedDate } from '../utils/dateUtils';
@@ -27,6 +28,8 @@ function StatisticsPage() {
   );
 
   const [viewType, setViewType] = useState('daily');
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [diaryDates, setDiaryDates] = useState([]);
 
   const {
     statData,
@@ -36,6 +39,52 @@ function StatisticsPage() {
     error,
     recommendationError
   } = useStatistics(selectedDate, viewType);
+
+  useEffect(() => {
+    const fetchDiaryDates = async () => {
+      try {
+        const token =
+          localStorage.getItem('accessToken') ||
+          localStorage.getItem('token') ||
+          localStorage.getItem('access_token');
+
+        if (!token) {
+          setDiaryDates([]);
+          return;
+        }
+
+        const response = await fetch('http://localhost:8000/api/diaries', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          setDiaryDates([]);
+          return;
+        }
+
+        const data = await response.json();
+
+        const dates = data
+          .map((diary) => {
+            if (diary.diary_date) return diary.diary_date;
+            if (diary.created_at) return diary.created_at.slice(0, 10);
+            if (diary.date) return diary.date;
+            return null;
+          })
+          .filter(Boolean);
+
+        setDiaryDates(dates);
+      } catch (error) {
+        console.error('diaryDates fetch error:', error);
+        setDiaryDates([]);
+      }
+    };
+
+    fetchDiaryDates();
+  }, []);
 
   const changeDate = (amount) => {
     const newDate = getChangedDate(selectedDate, viewType, amount);
@@ -70,6 +119,7 @@ function StatisticsPage() {
                 viewType={viewType}
                 selectedDate={selectedDate}
                 changeDate={changeDate}
+                onOpenCalendar={() => setIsCalendarOpen(true)}
               />
 
               {viewType === 'daily' && recommendationLoading && (
@@ -97,6 +147,15 @@ function StatisticsPage() {
             </>
           )}
         </main>
+
+        {isCalendarOpen && (
+          <CalendarModal
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            diaryDates={diaryDates}
+            onClose={() => setIsCalendarOpen(false)}
+          />
+        )}
       </div>
     </MobileLayout>
   );

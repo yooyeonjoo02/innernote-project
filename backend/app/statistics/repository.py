@@ -9,8 +9,9 @@ from app.survey.models import Survey
 class StatisticsRepository:
 
     @staticmethod
-    def find_diary_by_date(db: Session, target_date: date):
+    def find_diary_by_date(db: Session, user_id: int, target_date: date):
         return db.query(Diary).filter(
+            Diary.user_id == user_id,  # [수정] 타 유저 데이터 혼입 방지
             Diary.diary_date == target_date,
             Diary.is_deleted == False
         ).order_by(Diary.diary_date.desc()).first()
@@ -30,6 +31,7 @@ class StatisticsRepository:
     @staticmethod
     def find_diaries_with_emotion_analysis(
         db: Session,
+        user_id: int,
         start_date: date,
         end_date: date
     ):
@@ -37,6 +39,7 @@ class StatisticsRepository:
             EmotionAnalysis,
             Diary.id == EmotionAnalysis.diary_id
         ).filter(
+            Diary.user_id == user_id,  # [수정] 타 유저 데이터 혼입 방지
             Diary.diary_date >= start_date,
             Diary.diary_date <= end_date,
             Diary.is_deleted == False

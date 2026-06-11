@@ -6,6 +6,9 @@ import SurveyPage from "./survey/pages/SurveyPage";
 
 import LoginPage from "./user/pages/LoginPage";
 import SignUpPage from "./user/pages/SignUpPage";
+import ForgotPasswordPage from "./user/pages/ForgotPasswordPage";
+import ResetPasswordPage from "./user/pages/ResetPasswordPage";
+
 
 function App() {
   return (
@@ -16,6 +19,8 @@ function App() {
       {/* User */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignUpPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       {/* Main */}
       <Route path="/main" element={<MainPage />} />

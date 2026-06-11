@@ -17,7 +17,8 @@ function EmotionChart({
   statData,
   viewType,
   selectedDate,
-  changeDate
+  changeDate,
+  onOpenCalendar
 }) {
   const getCurrentEmotionList = () => {
     if (!statData) return [];
@@ -107,17 +108,23 @@ function EmotionChart({
     <>
       <div className="flex justify-between items-center mb-5 px-2">
         <button
+          type="button"
           onClick={() => changeDate(-1)}
           className="p-1 rounded-full hover:bg-orange-100 transition"
         >
           <ChevronLeft className="w-5 h-5 text-gray-600" />
         </button>
 
-        <span className="text-sm font-semibold text-gray-700 text-center">
+        <button
+          type="button"
+          onClick={onOpenCalendar}
+          className="text-sm font-semibold text-gray-700 text-center cursor-pointer hover:text-red-400 transition"
+        >
           {getTitleText()}
-        </span>
+        </button>
 
         <button
+          type="button"
           onClick={() => changeDate(1)}
           className="p-1 rounded-full hover:bg-orange-100 transition"
         >

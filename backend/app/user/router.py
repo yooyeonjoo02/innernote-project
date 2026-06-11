@@ -11,7 +11,11 @@ from app.user.schemas import (
     UserMeResponse,
     UserUpdateRequest,
     UserUpdateResponse,
-    UserDeleteResponse
+    UserDeleteResponse,
+    ForgotPasswordRequest,
+    ForgotPasswordResponse,
+    ResetPasswordRequest,
+    ResetPasswordResponse
 )
 from app.user.service import UserService
 from app.core.security import get_current_user
@@ -83,3 +87,31 @@ def delete_my_account(
     return {
         "message": "회원 탈퇴 성공"
     }
+
+
+@router.post(
+    "/forgot-password",
+    response_model=ForgotPasswordResponse
+)
+def forgot_password(
+    request: ForgotPasswordRequest,
+    db: Session = Depends(get_db)
+):
+    return user_service.forgot_password(
+        db,
+        request
+    )
+
+
+@router.post(
+    "/reset-password",
+    response_model=ResetPasswordResponse
+)
+def reset_password(
+    request: ResetPasswordRequest,
+    db: Session = Depends(get_db)
+):
+    return user_service.reset_password(
+        db,
+        request
+    )
